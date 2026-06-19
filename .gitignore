@@ -1,0 +1,10 @@
+﻿# Python caching
+__pycache__/
+*.py[cod]
+*.class
+.pytest_cache/
+
+# AWS CDK outputs
+cdk.out/
+.cdk.staging/
+.env
