@@ -1,10 +1,31 @@
 ﻿# Python caching
 __pycache__/
 *.py[cod]
-*.class
+*$py.class
 .pytest_cache/
+
+# Python virtual environments (CRITICAL for CDK)
+.venv/
+venv/
+env/
 
 # AWS CDK outputs
 cdk.out/
 .cdk.staging/
+
+# Environment variables & secrets
 .env
+.env.*
+
+# IDEs and Text Editors
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.swp
+
+# Operating System Files
+.DS_Store
+Thumbs.db
