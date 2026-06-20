@@ -1,4 +1,4 @@
-﻿import aws_cdk as cdk
+import aws_cdk as cdk
 from aws_cdk import aws_athena as athena
 from aws_cdk import aws_s3 as s3
 from constructs import Construct
@@ -12,6 +12,9 @@ class AthenaStack(cdk.Stack):
         workgroup = athena.CfnWorkGroup(self, "AthenaWorkGroup",
             name="CuratedAnalyticsWG",
             work_group_configuration=athena.CfnWorkGroup.WorkGroupConfigurationProperty(
+                # FIX 3: enforce_workgroup_configuration ensures clients cannot
+                # override the output location and write results elsewhere
+                enforce_workgroup_configuration=True,
                 result_configuration=athena.CfnWorkGroup.ResultConfigurationProperty(
                     output_location=f"s3://{curated_bucket.bucket_name}/athena-query-results/"
                 )
@@ -26,4 +29,6 @@ class AthenaStack(cdk.Stack):
         )
 
         cdk.CfnOutput(self, "AthenaWorkGroupName", value=workgroup.name)
-        cdk.CfnOutput(self, "AthenaQueryName", value=query.name)
+        # FIX 3: query.ref resolves to the CloudFormation physical resource ID,
+        # which is the correct cross-stack token for a CfnNamedQuery
+        cdk.CfnOutput(self, "AthenaQueryRef", value=query.ref)
