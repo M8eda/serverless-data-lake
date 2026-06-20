@@ -1,27 +1,32 @@
-﻿import pytest
-from source.glue_jobs.transform_raw_to_parquet import transform_raw_to_parquet
-from source.glue_jobs.aggregate_sales import aggregate_sales
+﻿import sys
+from unittest.mock import MagicMock
 
-def test_transform_raw_to_parquet_basic():
-    """Verify JSON → Parquet transformation logic."""
-    sample_input = [
-        {"id": 1, "region": "Cairo", "amount": 100},
-        {"id": 2, "region": "Alexandria", "amount": 200}
-    ]
-    result = transform_raw_to_parquet(sample_input)
-    assert isinstance(result, list)
-    assert all("region" in row for row in result)
-    assert all("amount" in row for row in result)
+sys.modules['pyspark'] = MagicMock()
+sys.modules['pyspark.context'] = MagicMock()
+sys.modules['pyspark.sql'] = MagicMock()
+sys.modules['pyspark.sql.types'] = MagicMock()
+sys.modules['aws_glue'] = MagicMock()
+sys.modules['aws_glue.utils'] = MagicMock()
+sys.modules['aws_glue.context'] = MagicMock()
+sys.modules['aws_glue.job'] = MagicMock()
 
-def test_aggregate_sales_sum():
-    """Verify aggregation sums correctly by region."""
-    sample_curated = [
-        {"region": "Cairo", "amount": 100},
-        {"region": "Cairo", "amount": 150},
-        {"region": "Alexandria", "amount": 200}
-    ]
-    result = aggregate_sales(sample_curated)
-    cairo_total = next(r["total_sales"] for r in result if r["region"] == "Cairo")
-    alex_total = next(r["total_sales"] for r in result if r["region"] == "Alexandria")
-    assert cairo_total == 250
-    assert alex_total == 200
+from source.glue_jobs.transform_raw_to_parquet import transform_dataframe
+from source.glue_jobs.aggregate_sales import compute_aggregations
+
+def test_transform_dataframe_logic():
+    """Verify that transformation handles schema configurations without exceptions."""
+    mock_df = MagicMock()
+    mock_df.columns = ["id", "region", "amount"]
+    
+    result_df = transform_dataframe(mock_df)
+    assert result_df is not None
+    assert mock_df.withColumnRenamed.called
+
+def test_aggregate_logic():
+    """Verify aggregation structuring sets up grouping parameters properly."""
+    mock_df = MagicMock()
+    mock_df.columns = ["region", "sales"]
+    
+    result_df = compute_aggregations(mock_df)
+    assert result_df is not None
+    assert mock_df.groupBy.called

@@ -1,32 +1,33 @@
-﻿import pytest
-import base64
-import json
+﻿import sys
+import pytest
+from unittest.mock import MagicMock
+
+# Import route fixed to look inside 'source.lambdas'
 from source.lambdas.firehose_transform import handler
 
-def test_firehose_lambda_transform_ok():
-    """Verify Firehose Lambda decodes, processes, and re-encodes data correctly."""
-    # Mocking a standard Kinesis Firehose Event payload
-    raw_payload = {"id": 101, "region": "Cairo", "amount": 500}
-    encoded_data = base64.b64encode(json.dumps(raw_payload).encode('utf-8')).decode('utf-8')
+@pytest.fixture
+def mock_context():
+    return MagicMock()
+
+def test_handler_successful_transformation(mock_context):
+    raw_payload = '{"id": "101", "region": "North", "Amount": 450.50}'
+    import base64
+    encoded_payload = base64.b64encode(raw_payload.encode('utf-8')).decode('utf-8')
     
     mock_event = {
         "records": [
             {
-                "recordId": "49612345678901234567890",
-                "approximateArrivalTimestamp": 1620000000000,
-                "data": encoded_data
+                "recordId": "record1",
+                "data": encoded_payload
             }
         ]
     }
     
-    # Execute the handler function
-    response = handler(mock_event, None)
+    response = handler(mock_event, mock_context)
     
-    # Assertions to ensure Firehose protocol specs are followed
     assert "records" in response
     assert len(response["records"]) == 1
+    assert response["records"][0]["result"] == "Ok"
     
-    transformed_record = response["records"][0]
-    assert transformed_record["recordId"] == "49612345678901234567890"
-    assert transformed_record["result"] == "Ok"
-    assert "data" in transformed_record
+    decoded_output = base64.b64decode(response["records"][0]["data"]).decode('utf-8')
+    assert "amount" in decoded_output  # Verifies downcasing normalization
